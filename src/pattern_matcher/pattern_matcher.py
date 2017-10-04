@@ -7,11 +7,11 @@ import re
 import logging
 import collections
 
-#patterns_dict = dict()
-patterns_dict = collections.defaultdict(list)
+patterns_dict = collections.defaultdict(list) #wildcard indices
+pattern_length_dict = collections.defaultdict(list)
 patterns = list()
 paths = list()
-
+NO_MATCH = "NO MATCH"
 
 def logger_config():
     logging.basicConfig(level=logging.DEBUG, format=("[###%(levelname)s] "
@@ -40,22 +40,17 @@ def parse_path(path):
 
 def parse_pattern(pattern):
     parsed_pattern = parse(pattern)
-    logging.debug("@@@@@@@@parsed pattern=%s", parsed_pattern)
+    logging.debug("parsed pattern=%s", parsed_pattern)
     patterns.append(parsed_pattern)
     parsed_pattern_char_count = collections.Counter(parsed_pattern)
     wildcard_count = parsed_pattern_char_count.get("*")
     if wildcard_count == None:
         wildcard_count = 0
     logging.debug("wildcard_count=%d", wildcard_count)
+    slash_count = [pos for pos, char in enumerate(parsed_pattern) if char == "/"]
+    pattern_length_dict[len(slash_count)].append(parsed_pattern)
     index = [pos for pos, char in enumerate(parsed_pattern) if char == "*"]
-    logging.debug("storing key parsed_pattern=%s", parsed_pattern)
-    logging.debug("storing value index=%s", index)
     patterns_dict[parsed_pattern].append(index)
-    # for k,v in patterns_dict.items():
-    #     for i in v:
-    #         logging.debug("###############k=%s, i=%s", k, i)
-    #TODO get freqcount of wildcards in pattern and store in dict
-    #TODO store the indices of the wildcards in the dict
 
 
 def parse(pattern):
@@ -65,8 +60,9 @@ def parse(pattern):
 
 
 def find_pattern_match(pattern):
-    pattern_list = patterns_dict[pattern]
-    logging.debug("patern_list= %s", pattern_list)
+    logging.debug("PATTERN ==== %s", pattern)
+#    pattern_list = patterns_dict[pattern]
+#    logging.debug("patern_list= %s", pattern_list)
 
 
 def pattern_match_path(path, pattern):
@@ -102,9 +98,36 @@ def run():
             except EOFError as eof:
                 logging.info("Reached the end of input.")
                 break
-        r = patterns_dict.get("w/x/*/*")
-        logging.debug("!!!!!!result=%s", r)
-        logging.debug("keys==%s", patterns_dict.keys())
+
+        path = "a/b/c/"
+        path_list = list(path)
+        slash_count = [pos for pos, char in enumerate(path) if char == "/"]
+        # r = patterns_dict.get(pattern)
+        # wildcards = 0
+        # if r is not None:
+        #     wildcards = r[0]
+        possible_patterns = pattern_length_dict[len(slash_count)]
+        if len(possible_patterns) == 0:
+            result = NO_MATCH
+        else:
+            for pattern in possible_patterns:
+                pattern_list = list(pattern)
+                wildcards = patterns_dict.get(pattern)[0]
+                for index in wildcards:
+                    pattern_list[index] = path_list[index]
+                result = "".join(pattern_list)
+                print result
+
+        #pattern_str_list = list(pattern)
+        logging.debug("RESULT====%s", result)
+
+        logging.debug("wildcards dict")
+        for k, v in patterns_dict.iteritems():
+            print k, v
+
+        logging.debug("legnth dict")
+        for k, v in pattern_length_dict.iteritems():
+            print k, v
     except ValueError as e:
         logging.error("An error has occurred, %s", e)
     except TypeError as te:
