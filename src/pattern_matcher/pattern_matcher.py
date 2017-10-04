@@ -22,46 +22,42 @@ def logger_config():
                                                     "%(lineno)d: "
                                                     "%(message)s\n"))
 
+
 def process_input(user_input, lines_count, type_count):
     if type_count % 2 == 0:
         logging.debug("PATH ONLY ----- type_count=%d", type_count)
-#        parsed_path = parse_path(user_input)
         process_pattern_match(user_input)
     else:
         logging.debug("PATTERN ONLY ----- type_count=%d", type_count)
-        parse_pattern(user_input)
+        parsed_input = parse(user_input)
+        parse_pattern(parsed_input)
 
 
-# def parse_path(path):
-#     logging.debug("path=%s", path)
-#     return path
-
-
-def parse_pattern(pattern):
-    parsed_pattern = parse(pattern)
+def parse_pattern(parsed_pattern):
     logging.debug("parsed pattern=%s", parsed_pattern)
     patterns.append(parsed_pattern)
-    parsed_pattern_char_count = collections.Counter(parsed_pattern)
-    wildcard_count = parsed_pattern_char_count.get("*")
-    if wildcard_count == None:
-        wildcard_count = 0
-    logging.debug("wildcard_count=%d", wildcard_count)
-    slash_count = [pos for pos, char in enumerate(parsed_pattern) if char == "/"]
-    pattern_length_dict[len(slash_count)].append(parsed_pattern)
+    set_wildcards_indices_from_pattern(parsed_pattern)
+    set_slashes_indices_from_pattern(parsed_pattern)
+
+
+def set_wildcards_indices_from_pattern(parsed_pattern):
     index = [pos for pos, char in enumerate(parsed_pattern) if char == "*"]
     patterns_dict[parsed_pattern].append(index)
 
 
+def set_slashes_indices_from_pattern(parsed_pattern):
+    slash_count = [pos for pos, char in enumerate(parsed_pattern) if char == "/"]
+    pattern_length_dict[len(slash_count)].append(parsed_pattern)
+
+
+def get_slashes_indices_from_strip_path(strip_path):
+    slash_count = [pos for pos, char in enumerate(strip_path) if char == "/"]
+    return pattern_length_dict[len(slash_count)]
+
+
 def parse(pattern):
     logging.debug("Sub / for , in %s", pattern)
-    result = re.sub(",", "/", pattern)
-    return result
-
-
-# def find_pattern_match(pattern):
-#     logging.debug("PATTERN ==== %s", pattern)
-#    pattern_list = patterns_dict[pattern]
-#    logging.debug("patern_list= %s", pattern_list)
+    return re.sub(",", "/", pattern)
 
 
 def process_pattern_match(path):
@@ -69,10 +65,10 @@ def process_pattern_match(path):
     strip_path = path.strip("/")
     logging.debug("strip path: %s, path: %s", strip_path, path)
     path_list = list(strip_path)
-    slash_count = [pos for pos, char in enumerate(strip_path) if char == "/"]
-    possible_patterns = pattern_length_dict[len(slash_count)]
+    possible_patterns = get_slashes_indices_from_strip_path(strip_path)
     results_list = list()
     result = NO_MATCH
+
     if len(possible_patterns) == 0:
         result = NO_MATCH
     else:
@@ -118,16 +114,7 @@ def process_pattern_match(path):
                 maxpattern = i
                 maxvalue = maxvalue_tmp
         result = maxpattern
-    print "result: " + re.sub("/", ",", result)
-
-# def pattern_match_path(path, pattern):
-#     logging.debug("path= %s, pattern= %s", path, pattern)
-#     if len(path) is not len(pattern):
-#         print "NO MATCH"
-#     elif path != pattern:
-#         print "NO MATCH"
-#     else:
-#         print pattern
+    print re.sub("/", ",", result)
 
 
 def run():
@@ -156,13 +143,13 @@ def run():
             except EOFError as eof:
                 logging.info("Reached the end of input.")
                 break
-        logging.debug("wildcards dict")
-        for k, v in patterns_dict.iteritems():
-            print k, v
-
-        logging.debug("legnth dict")
-        for k, v in pattern_length_dict.iteritems():
-            print k, v
+        # logging.debug("wildcards dict")
+        # for k, v in patterns_dict.iteritems():
+        #     print k, v
+        #
+        # logging.debug("legnth dict")
+        # for k, v in pattern_length_dict.iteritems():
+        #     print k, v
     except ValueError as e:
         logging.error("An error has occurred, %s", e)
     except TypeError as te:

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import unittest
-from mock import mock_open, patch
 import sys
 import os
 sys.path.insert(0, os.path.abspath("../src/pattern_matcher"))
@@ -9,9 +8,10 @@ sys.path.insert(0, os.path.abspath("../src/pattern_matcher"))
 import pattern_matcher
 
 HERE = os.path.abspath(os.path.dirname(__file__))
+test_path = "a/b/c"
+test_pattern = "a,*,c"
 
-
-class WorkflowTests(unittest.TestCase):
+class PatternMatcherTests(unittest.TestCase):
 
     # @patch("os.path.isfile")
     # @patch("json.load")
@@ -21,12 +21,13 @@ class WorkflowTests(unittest.TestCase):
     #     m.assert_called_with("file.json", "r")
 
 
-    def test(self):
-        self.assertEqual(True, True)
+    def testParse(self):
+        result = pattern_matcher.parse(test_pattern)
+        self.assertEqual(result, "a/*/c")
         # sorted_values = [5.0,4.5,3.0,2.5,1.0]
         # result = workflow._min(sorted_values)
         # self.assertEqual(result, 1.0)
 
 
-suite = unittest.TestLoader().loadTestsFromTestCase(WorkflowTests)
+suite = unittest.TestLoader().loadTestsFromTestCase(PatternMatcherTests)
 unittest.TextTestRunner(verbosity=2).run(suite)
