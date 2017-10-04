@@ -35,7 +35,6 @@ def parse_path(path):
     parsed_path = parse(path)
     logging.debug("parsed path=%s", parsed_path)
     return parsed_path
-    #paths.append(parsed_path)
 
 
 def parse_pattern(pattern):
@@ -99,35 +98,52 @@ def run():
                 logging.info("Reached the end of input.")
                 break
 
-        path = "a/b/c/"
+        path = "a/b/c"
         path_list = list(path)
         slash_count = [pos for pos, char in enumerate(path) if char == "/"]
-        # r = patterns_dict.get(pattern)
-        # wildcards = 0
-        # if r is not None:
-        #     wildcards = r[0]
         possible_patterns = pattern_length_dict[len(slash_count)]
+        results_list = list()
         if len(possible_patterns) == 0:
             result = NO_MATCH
         else:
             for pattern in possible_patterns:
                 pattern_list = list(pattern)
-                wildcards = patterns_dict.get(pattern)[0]
+                wildcards = patterns_dict.get(pattern)
+                if wildcards is None:
+                    wildcards = 0
+                else:
+                    wildcards = wildcards[0]
+                logging.debug("Pattern wildcard indices= %s", wildcards)
                 for index in wildcards:
                     pattern_list[index] = path_list[index]
                 result = "".join(pattern_list)
-                print result
+                if result == path:
+                    logging.debug("Adding pattern %s to list of results that"
+                                  " could match the path %s.", pattern, path)
+                    results_list.append(pattern)
 
-        #pattern_str_list = list(pattern)
+        if len(results_list) == 0:
+            result = NO_MATCH
+        elif len(results_list) == 1:
+            result = results_list[0]
+        else:
+            maxvalue = 0
+            maxpattern = ""
+            for i in results_list:
+                wildcards = patterns_dict.get(i)
+                maxvalue_tmp = sum(wildcards[0])
+                if maxvalue_tmp > maxvalue:
+                    maxpattern = i
+                    maxvalue = maxvalue_tmp
+            result = maxpattern
         logging.debug("RESULT====%s", result)
-
-        logging.debug("wildcards dict")
-        for k, v in patterns_dict.iteritems():
-            print k, v
-
-        logging.debug("legnth dict")
-        for k, v in pattern_length_dict.iteritems():
-            print k, v
+        # logging.debug("wildcards dict")
+        # for k, v in patterns_dict.iteritems():
+        #     print k, v
+        #
+        # logging.debug("legnth dict")
+        # for k, v in pattern_length_dict.iteritems():
+        #     print k, v
     except ValueError as e:
         logging.error("An error has occurred, %s", e)
     except TypeError as te:
