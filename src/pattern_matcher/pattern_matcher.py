@@ -7,7 +7,7 @@ import re
 import logging
 import collections
 
-patterns_dict = collections.defaultdict(list) #wildcard indices
+patterns_dict = collections.defaultdict(list)
 pattern_length_dict = collections.defaultdict(list)
 patterns = list()
 paths = list()
@@ -23,7 +23,7 @@ def logger_config():
                                                     "%(message)s\n"))
 
 
-def process_input(user_input, lines_count, type_count):
+def process_input(user_input, type_count):
     if type_count % 2 == 0:
         logging.debug("PATH ONLY ----- type_count=%d", type_count)
         process_pattern_match(user_input)
@@ -52,6 +52,7 @@ def set_slashes_indices_from_pattern(parsed_pattern):
 
 def get_slashes_indices_from_strip_path(strip_path):
     slash_count = [pos for pos, char in enumerate(strip_path) if char == "/"]
+    print slash_count
     return pattern_length_dict[len(slash_count)]
 
 
@@ -65,7 +66,9 @@ def process_pattern_match(path):
     strip_path = path.strip("/")
     logging.debug("strip path: %s, path: %s", strip_path, path)
     path_list = list(strip_path)
+    print path_list
     possible_patterns = get_slashes_indices_from_strip_path(strip_path)
+    print possible_patterns
     results_list = list()
     result = NO_MATCH
 
@@ -80,13 +83,11 @@ def process_pattern_match(path):
             else:
                 wildcards = wildcards[0]
             logging.debug("Pattern wildcard indices= %s", wildcards)
-
             if not wildcards:
                 logging.debug("An empty wildcards list - test the pattern")
                 if pattern == strip_path:
                     results_list.append(pattern)
                     break
-
             for index in wildcards:
                 pattern_list[index] = path_list[index]
             result = "".join(pattern_list)
@@ -106,10 +107,13 @@ def process_pattern_match(path):
         for i in results_list:
             wildcards = patterns_dict.get(i)
             maxvalue_tmp = sum(wildcards[0])
-            logging.debug("Pattern sum the number of wildcards= %d", maxvalue_tmp)
             if maxvalue_tmp == 0 and pattern == path:
                 result = pattern
                 break
+            if len(wildcards[0]) == 1:
+                maxpattern = i
+                break
+            logging.debug("Pattern sum the number of wildcards= %d", maxvalue_tmp)
             if maxvalue_tmp > maxvalue:
                 maxpattern = i
                 maxvalue = maxvalue_tmp
@@ -122,7 +126,7 @@ def run():
     lines_count = 0
     type_count = 0
     try:
-        logging.info("Start input processing...")
+        logging.debug("Start input processing...")
         while True:
             try:
                 user_input = raw_input()
@@ -131,25 +135,16 @@ def run():
                     break
                 if user_input.isdigit():
                     logging.debug("User input is an int")
-                    lines_count = int(user_input)
                     type_count = type_count + 1
-                    logging.debug("lines_count=%d, type_count=%d", lines_count, type_count)
                     continue
                 if not user_input.isdigit():
                     logging.debug("User input is a pattern or path")
                     logging.debug("user_input=%s", user_input)
-                    process_input(user_input, lines_count, type_count)
+                    process_input(user_input, type_count)
                     continue
             except EOFError as eof:
-                logging.info("Reached the end of input.")
+                logging.debug("Reached the end of input.")
                 break
-        # logging.debug("wildcards dict")
-        # for k, v in patterns_dict.iteritems():
-        #     print k, v
-        #
-        # logging.debug("legnth dict")
-        # for k, v in pattern_length_dict.iteritems():
-        #     print k, v
     except ValueError as e:
         logging.error("An error has occurred, %s", e)
     except TypeError as te:

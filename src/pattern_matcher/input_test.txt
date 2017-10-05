@@ -2,7 +2,7 @@
 *,b,*
 a,*,*
 *,*,c
-foo,bar,baz
+foo,*,baz
 w,x,*,*
 *,x,y,z
 5
